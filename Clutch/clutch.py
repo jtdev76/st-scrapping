@@ -1,3 +1,14 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+
+options = Options()
+# options.add_argument('--headless')
+
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -5,105 +16,56 @@ import os
 import pandas as pd
 import time
 
+from extract_email import emailExtractor
+# import check_scrapped_records
+
 data_list = []
 
-counter = 0
-
-response = requests.get("https://www.altenergymag.com/company_directory_search.php?company=&industry=&region=&sector=&keyword=&Search=active&search=Search#results")
-
-soup = BeautifulSoup(response.content, 'html.parser')
-
-for row in soup.select(".entry-title"):
-
+counter = 1
+for page in range(91):
     try:
-        url = row.select_one("a")['href']
-        title = row.select_one("a").text
+        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+        driver.get("https://clutch.co/logistics/supply-chain-management?page={page}".format(page=str(page)))
 
-        row_data = {
-            "Title": title,
-            "Company Category": "",
-            "Email": "",
-            "Telephone": "",
-            "Address": "",
-            "Website": "",
-            "Description": ""
-        }
-
-        try:
-            response_indivisual = requests.get("https://www.altenergymag.com"+url)
-            soup_indivisual = BeautifulSoup(response_indivisual.content, 'html.parser')
-
-            page = soup_indivisual.select_one(".page-content")
-
+        cluch_links = driver.find_elements(By.CSS_SELECTOR, ".website-profile")
+    
+        for cluch_link in cluch_links:
             try:
-                row_data['Description'] = page.select_one(".description").text
-                row_data['Description'] = row_data['Description'].strip()
-            except:
-                pass
+                row_data = {
+                    "Name": "",
+                    "Email": "",
+                    "Clutch url": cluch_link.find_element(By.CSS_SELECTOR, "a").get_attribute("href"),
+                    "Website": "",
+                }
+                
+                page_driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+                page_driver.get(row_data["Clutch url"])
 
-            try:
-                mailtos = soup_indivisual.select('a[href]')
-        
-                for i in mailtos:
-                    href=i['href']
-                    
-                    if "mailto" in href:
-                        row_data['Email'] = href.replace("mailto:", "")
-            except:
-                pass
+            
+                web_link_element = WebDriverWait(page_driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".visit-website"))
+                )
 
+                web_link = web_link_element.get_attribute("href")
 
-            try:
-                ps = soup_indivisual.select('p')
-        
-                for p in ps:
-                    
-                    try:
-                        if "Mailing Address:" in p.text:
-                            row_data['Address'] = p.text
-                            row_data['Address'] = row_data['Address'].replace("Mailing Address:", "")
-                            row_data['Address'] = row_data['Address'].strip()
-                    except:
-                        pass
-                    
-                    try:
-                        if "Website:" in p.text:
-                            row_data['Website'] = p.text
-                            row_data['Website'] = row_data['Website'].replace("Website:", "")
-                            row_data['Website'] = row_data['Website'].strip()
-                    except:
-                        pass
+                profile_header = WebDriverWait(page_driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".profile-header__title"))
+                )
 
-                    try:
-                        if "Tel:" in p.text:
-                            row_data['Telephone'] = p.text
-                            row_data['Telephone'] = row_data['Telephone'].replace("Tel:", "")
-                            row_data['Telephone'] = row_data['Telephone'].strip()
-                    except:
-                        pass
+                row_data["Name"] = profile_header.text
+                row_data["Email"] = emailExtractor(web_link)
+                row_data["Website"] = web_link
 
-                    try:
-                        if "Company Category:" in p.text:
-                            row_data['Company Category'] = p.text
-                            row_data['Company Category'] = row_data['Company Category'].replace("Company Category:", "")
-                            row_data['Company Category'] = row_data['Company Category'].strip()
-                    except:
-                        pass
-            except:
-                pass
+                # if check_scrapped_records.check_records(row_data["Name"]):
+                data_list.append(row_data)
+                df = pd.DataFrame(data_list)
+                df.to_excel("./clutch.xlsx", index = False)
 
-        except Exception as e:
-            print(e)
+                    # check_scrapped_records.save_records()
 
-
-        data_list.append(row_data)
-
-        counter+=1
-        print(counter)
-
+                print(counter)
+                counter += 1
+            except Exception as e:
+                print(e)
     except Exception as e:
         print(e)
-
-df = pd.DataFrame(data_list)
-
-df.to_excel("data/altenergymag.xlsx", index = False)
