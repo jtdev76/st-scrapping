@@ -3,7 +3,7 @@ import requests
 
 
 #add url of the page you want to scrape to urlString
-urlString='https://ctccarriers.com/'
+urlString='https://hvtlogistics.vn/'
 def decodeEmail(e):
     de = ""
     k = int(e[:2], 16)
@@ -26,8 +26,8 @@ def emailExtractor(urlString):
         href=i['href']
         
         if "mailto" in href:
-            emailList.add(i.text)
+            email_text = i['href'].replace("mailto:", "")
+            if email_text:
+                emailList.add(email_text)
 
     return ", ".join(emailList)
-
-# print(emailExtractor(urlString))

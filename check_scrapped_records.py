@@ -16,7 +16,7 @@
 #     existing_records_file.write(existing_records_str)
 import json
 
-file_path = "../scrapped_records.json"
+file_path = "scrapped_records.json"
 
 try:
     with open(file_path, "r") as existing_records_file:
