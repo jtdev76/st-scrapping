@@ -4,7 +4,7 @@ import pandas as pd
 import sys
 sys.path.append('..')
 import check_scrapped_records
-
+import time
 data_list = []
 # For health Care
 # https://www.trustpilot.com/_next/data/categoriespages-consumersite-3760/categories/health_medical.json?page=2&categoryId=health_medical
@@ -20,6 +20,7 @@ json_obj = json.loads(response1.text)
 total = json_obj.get("pageProps")['businessUnits']["totalPages"]
 
 for page in range(1,total+1):
+  time.sleep(10)
   if page != 1:
     url = f"https://www.trustpilot.com/_next/data/categoriespages-consumersite-3908/categories/health_medical.json?page={str(page)}&categoryId=health_medical"
   else:
