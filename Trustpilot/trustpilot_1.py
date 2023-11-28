@@ -21,6 +21,7 @@ total = json_obj.get("pageProps")['businessUnits']["totalPages"]
 
 for page in range(1,total+1):
   time.sleep(5)
+  print("------",page,"------------")
   if page != 1:
     url = f"https://www.trustpilot.com/_next/data/categoriespages-consumersite-3908/categories/health_medical.json?page={str(page)}&categoryId=health_medical"
   else:
@@ -40,11 +41,10 @@ for page in range(1,total+1):
         if value:
           address.append(value)
       row_data["Address"]= ", ".join(address)
-    # company_found = check_scrapped_records.check_records(row_data["Company"])
-    # if company_found:
-    data_list.append(row_data)
-    print("------",page,"------------")
-    # check_scrapped_records.save_records()
+    company_found = check_scrapped_records.check_records(row_data["Company"])
+    if company_found:
+        data_list.append(row_data)
+    check_scrapped_records.save_records()
 
 df = pd.DataFrame(data_list)
-df.to_excel('trustpilot-healthcare_1.xlsx', index=False)  # Set index=False to exclude row numbers
+df.to_excel('trustpilot-healthcare_2.xlsx', index=False)  # Set index=False to exclude row numbers
