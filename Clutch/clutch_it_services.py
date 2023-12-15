@@ -11,6 +11,9 @@ sys.path.append('..')
 options = Options()
 # options.add_argument('--headless')
 
+options2 = Options()
+# options2.add_argument('--headless')
+
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -18,16 +21,17 @@ import os
 import pandas as pd
 import time
 
-from extract_email import emailExtractor
-# import check_scrapped_records
+import extract_email
+import check_scrapped_records
 
 data_list = []
 
 counter = 1
-for page in range(91):
+for page in range(197):
+
     try:
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
-        driver.get("https://clutch.co/logistics/supply-chain-management?page={page}".format(page=str(page)))
+        driver = webdriver.Chrome(options=options)
+        driver.get("https://clutch.co/us/it-services?sort_by=Verification&page={page}".format(page=str(page)))
 
         cluch_links = driver.find_elements(By.CSS_SELECTOR, ".website-profile")
     
@@ -37,13 +41,12 @@ for page in range(91):
                     "Name": "",
                     "Email": "",
                     "Clutch url": cluch_link.find_element(By.CSS_SELECTOR, "a").get_attribute("href"),
-                    "Website": "",
+                    "Website": ""
                 }
                 
-                page_driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+                page_driver = webdriver.Chrome(options=options2)
                 page_driver.get(row_data["Clutch url"])
 
-            
                 web_link_element = WebDriverWait(page_driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, ".visit-website"))
                 )
@@ -55,17 +58,20 @@ for page in range(91):
                 )
 
                 row_data["Name"] = profile_header.text
-                row_data["Email"] = emailExtractor(web_link)
-                row_data["Website"] = web_link
 
-                # if check_scrapped_records.check_records(row_data["Name"]):
-                data_list.append(row_data)
-                df = pd.DataFrame(data_list)
-                df.to_excel("./clutch.xlsx", index = False)
+                if check_scrapped_records.check_records(row_data["Name"]):
+                    row_data["Email"] = extract_email.emailExtractor(web_link)
+                    print(counter, profile_header.text, row_data["Email"])
 
-                    # check_scrapped_records.save_records()
+                    if row_data["Email"]:
+                        row_data["Website"] = web_link
 
-                print(counter)
+                        data_list.append(row_data)
+                        df = pd.DataFrame(data_list)
+                        df.to_excel("./clutch_it_services.xlsx", index = False)
+
+                        check_scrapped_records.save_records()
+
                 counter += 1
             except Exception as e:
                 print(e)
