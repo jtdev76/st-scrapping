@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -59,21 +58,23 @@ for page in range(197):
 
                 row_data["Name"] = profile_header.text
 
-                if check_scrapped_records.check_records(row_data["Name"]):
-                    row_data["Email"] = extract_email.emailExtractor(web_link)
-                    print(counter, profile_header.text, row_data["Email"])
+                # if check_scrapped_records.check_records(row_data["Name"]):
+                row_data["Email"] = extract_email.emailExtractor(web_link)
+                print(counter, profile_header.text, row_data["Email"])
 
-                    if row_data["Email"]:
-                        row_data["Website"] = web_link
+                if row_data["Email"]:
+                    row_data["Website"] = web_link
 
-                        data_list.append(row_data)
-                        df = pd.DataFrame(data_list)
-                        df.to_excel("./clutch_it_services.xlsx", index = False)
+                    data_list.append(row_data)
+                    df = pd.DataFrame(data_list)
+                    df.to_excel("./clutch_it_services.xlsx", index = False)
 
-                        check_scrapped_records.save_records()
 
                 counter += 1
             except Exception as e:
                 print(e)
     except Exception as e:
         print(e)
+
+
+# check_scrapped_records.save_records()
