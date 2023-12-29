@@ -1,10 +1,7 @@
 from bs4 import BeautifulSoup
-from selenium import webdriver
+import requests
 
 from extract_emails.utils import email_filter
-
-options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
 
 #function that extracts all emails from a page you provided and stores them in a list
 def emailExtractor(urlString):
@@ -13,11 +10,9 @@ def emailExtractor(urlString):
     filtered_emails = []
 
     try:
-        driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(10)
-        driver.get(urlString)
-        
-        h=driver.page_source
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+        req = requests.get(urlString, headers=headers, timeout=10)
+        h = req.content
         soup=BeautifulSoup(h,'html.parser')
         mailtos = soup.select('a[href]')
         
